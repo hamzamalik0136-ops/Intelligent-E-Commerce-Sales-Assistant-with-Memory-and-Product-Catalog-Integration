@@ -1,0 +1,345 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -96,
+        16
+      ],
+      "id": "8ca623cb-abe6-45e8-80c0-e9da4606be0f",
+      "name": "When chat message received",
+      "webhookId": "0ea5210a-5b88-47a3-8072-93aef579b70a"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are a helpful assistant with memory and knowledge capabilities.\n\n🕒 Context Awareness\n\n- Current date and time: {{$now}}.\n- Always personalize responses using this context.\n\n📊 Product Information (Google Sheets: \"Product Info\")\n\n- You have access to the Google Sheets tool named \"Product Info\".\n- This sheet contains product details: product_url, product name, price, description, and topic.\n- Whenever the user asks about products, always check this sheet first.\n- If the user asks for a product link, always provide the exact product_url from the sheet.\n- If the user asks about descriptions, prices, or availability, always use the corresponding sheet data.\n- Never reveal that you are using Google Sheets. Present the data naturally.\n\n💾 Memory Handling (Supabase: \"Store_Memory\")\n\n- You also have access to Supabase tools for storing and retrieving user insights.\n- After every user message, you must ALWAYS store insights in Supabase using the \"Store_Memory\" tool.\n- Information to store:\n    \n    • What the user is looking for\n    \n    • Products they are interested in\n    \n    • Any problems, objections, or challenges mentioned\n    \n    • Key insights about their needs\n    \n- Before answering, you should call \"Get_Memory\" to retrieve past insights. Use these to make answers more personalized.\n\n📌 Rules\n\n- Never skip saving memory. Always call \"Store_Memory\" after responding.\n- Never tell the user you are using Supabase or Google Sheets.\n- Your role is to guide the user toward product discovery and decision-making by combining fresh sheet data and stored memory.\nWhen using tools, always format inputs exactly as required:\n\nFor Google Sheets (\"Product Info\"):\n\n- Always query by column names exactly as they appear: \"product_url\", \"product Name\", \"product price\", \"product Description\", \"product Topic\".\n- Example:\n{ \"action\": \"lookup\", \"column\": \"product Name\", \"value\": \"Wireless Earbuds Pro\" }\n\nFor Supabase (\"Store_Memory\"):\n\n- Always provide both table and values fields.\n- Example:\n{ \"table\": \"customer_memory\", \"values\": { \"user_query\": \"looking for earbuds\", \"interest\": \"audio products\" } }\n\nNever send free text to tools. Always follow these JSON schemas.\n\n🎯 Example behavior:\n\nUser: *“Do you have any earbuds?”*\n\n→ Check Google Sheet for product description & link.\n\n→ Retrieve past memory to see if user already asked about audio products.\n\n→ Respond: “Yes! I have Wireless Earbuds Pro, great for high-quality sound. Would you like me to share the purchase link?”\n\n→ Then store in memory: *User interested in earbuds*."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        688,
+        -16
+      ],
+      "id": "c30200e3-74e7-4d3d-8ea6-ced775a7c522",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        208
+      ],
+      "id": "04703493-b441-461f-83ac-dc94d47f961f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "kV9LPil1EnzoDw7C",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8d5fe39f-6980-4f59-8b84-9baa686fef58",
+              "name": "text",
+              "value": "={{ $json.raw_text }}",
+              "type": "string"
+            },
+            {
+              "id": "15a04374-9e7e-498f-b820-d0c982bba225",
+              "name": "Customer name",
+              "value": "={{ $json.customer_name }}",
+              "type": "string"
+            },
+            {
+              "id": "de78899d-e1ab-4bdc-acca-6f2999f88bde",
+              "name": "customer_email",
+              "value": "={{ $json.customer_email }}",
+              "type": "string"
+            },
+            {
+              "id": "c6b5762d-4ee4-4a84-b20c-7e94b6f8e928",
+              "name": "customer_phone",
+              "value": "={{ $json.customer_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "261ae05f-b8eb-4f64-9785-71d7e247f529",
+              "name": "Customer_Interest",
+              "value": "={{ $json.product_interest }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "84e09c03-4d63-46e3-a6b1-777bfd3e7fdd",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When chat message received').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        192
+      ],
+      "id": "03bdd588-f36e-4b99-af9f-d60ba3a463e0",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "13nlQVrMbPHAQL5LH29rY7wl3_1m90cAeD5w4h84sqpE",
+          "mode": "list",
+          "cachedResultName": "product-1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13nlQVrMbPHAQL5LH29rY7wl3_1m90cAeD5w4h84sqpE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/13nlQVrMbPHAQL5LH29rY7wl3_1m90cAeD5w4h84sqpE/edit#gid=0"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically",
+              "readRowsUntil": "firstEmptyRow"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        272
+      ],
+      "id": "4aee2646-4f60-466f-a51e-71586d1fd1ef",
+      "name": "Product Info",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7e3gUiWvTQt1VDTR",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "Memory Storage",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $json.customer_email }}"
+            },
+            {
+              "fieldId": "memory",
+              "fieldValue": "={{ $json.text }}"
+            },
+            {
+              "fieldId": "session ID",
+              "fieldValue": "={{ $('When chat message received').item.json.sessionId }}"
+            },
+            {
+              "fieldId": "customer_phone",
+              "fieldValue": "={{ $json.customer_phone }}"
+            },
+            {
+              "fieldId": "Customer_Interest",
+              "fieldValue": "={{ $json.Customer_Interest }}"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json['Customer name'] }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        288
+      ],
+      "id": "95db5f79-0568-4d3d-99c4-0ae1debd3dbd",
+      "name": "Store_Memory",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3xSIZHYsrpi2rhLJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "Memory Storage",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        304
+      ],
+      "id": "680eb788-e4b6-4264-a3f0-bd88c7da3c43",
+      "name": "Get_Memory",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3xSIZHYsrpi2rhLJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// -----------------------\n// Get text input\n// -----------------------\nconst input = $json.chatInput || \"\";\nconst text = input.trim();\n\n// -----------------------\n// Extract Email\n// -----------------------\nlet email = null;\nconst emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/);\nif (emailMatch) email = emailMatch[0];\n\n// -----------------------\n// Extract Phone Number\n// Supports PK formats:\n//  - 03XXXXXXXXX\n//  - +923XXXXXXXXX\n//  - 923XXXXXXXXX\n// Removes spaces, dashes, brackets\n// -----------------------\nlet phone = null;\nconst phoneMatch = text.match(/(?:\\+?92|0)?3[0-9]{9}/);\nif (phoneMatch) {\n  phone = phoneMatch[0].replace(/\\D/g, \"\"); // clean to digits\n}\n\n// -----------------------\n// Extract Name\n// Detects:\n// - my name is Anam Khan\n// - I am Anam\n// - I'm John Doe\n// - this is Ali Raza\n// -----------------------\nlet name = null;\nconst nameMatch = text.match(/(?:my name is|i am|i'm|this is)\\s+([A-Za-z]+(?:\\s+[A-Za-z]+)*)/i);\nif (nameMatch) {\n  name = nameMatch[1].trim();\n}\n\n// -----------------------\n// Extract Product\n// Detects:\n// - buy iPhone 15\n// - looking for Samsung Buds\n// - need HP laptop\n// - want Dell XPS 13\n// -----------------------\nlet product = null;\n\nconst productMatch = text.match(/(?:buy|purchase|order|want|looking for|need)\\s+([A-Za-z0-9\\s\\-]+)/i);\nif (productMatch) {\n  product = productMatch[1]\n    .replace(/(my name is|my email is|i am|i'm|this is).*/i, \"\") // stop capturing after unrelated words\n    .trim();\n}\n\n// -----------------------\n// Detect Intent\n// -----------------------\nlet intent = \"unknown\";\n\nif (/buy|purchase|order|looking for|need/i.test(text)) intent = \"buy\";\nelse if (/return|refund/i.test(text)) intent = \"return\";\nelse if (/complain|issue|problem/i.test(text)) intent = \"complaint\";\nelse if (/help|support/i.test(text)) intent = \"support\";\n\n// -----------------------\n// Final Output JSON\n// (Always null instead of \"\")\n// Safe for Supabase BIGINT\n// -----------------------\n\nreturn [\n  {\n    json: {\n      raw_text: text,\n      customer_name: name || null,\n      customer_email: email || null,\n      customer_phone: phone || null,\n      customer_intent: intent,\n      product_interest: product || null,\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        16
+      ],
+      "id": "d59a2347-ec99-4d3c-8156-b47eb61c57a1",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Info": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store_Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3f581e23-1058-4700-ab91-e7cf3318ae06",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a0353e52b1ed4aac79b65e156097f75eb7b35568ee9987cc9b8334b231808af6"
+  },
+  "id": "ZXIJR57u5gIhAadf",
+  "tags": []
+}
